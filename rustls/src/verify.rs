@@ -415,6 +415,37 @@ impl ServerCertVerifier for WebPkiVerifier {
     }
 }
 
+/// Verify that the end-entity certificate `end_entity` is a valid client cert
+/// and chains to at least one of the [OwnedTrustAnchor] in the `roots` [RootCertStore].
+///
+/// `intermediates` contains all certificates other than `end_entity` that
+/// were sent as part of the client's [Certificate] message. It is in the
+/// same order that the client sent them and may be empty.
+#[allow(dead_code)]
+#[cfg_attr(not(feature = "dangerous_configuration"), allow(unreachable_pub))]
+pub fn verify_client_cert_signed_by_trust_anchor(
+    cert: &ParsedCertificate,
+    roots: &RootCertStore,
+    intermediates: &[Certificate],
+    now: SystemTime
+) -> Result<(), Error> {
+    let chain = intermediate_chain(intermediates);
+    let trust_roots = trust_roots(roots);
+    let webpki_now = webpki::Time::try_from(now).map_err(|_| Error::FailedToGetCurrentTime)?;
+
+    cert.0
+        .verify_for_usage(
+            SUPPORTED_SIG_ALGS,
+            &trust_roots,
+            &chain,
+            webpki_now,
+            webpki::KeyUsage::client_auth(),
+            &[],
+        )
+        .map_err(pki_error)
+        .map(|_| ())
+}
+
 /// Default `ServerCertVerifier`, see the trait impl for more information.
 #[allow(unreachable_pub)]
 #[cfg_attr(docsrs, doc(cfg(feature = "dangerous_configuration")))]
