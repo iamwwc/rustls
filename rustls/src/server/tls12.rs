@@ -213,6 +213,7 @@ mod client_hello {
             if let Some(ocsp_response) = ocsp_response {
                 emit_cert_status(&mut flight, ocsp_response);
             }
+            // emit server key exchange
             let server_kx = emit_server_kx(
                 &mut flight,
                 sigschemes,
@@ -560,6 +561,7 @@ impl State<ServerConnectionData> for ExpectClientKx<'_> {
     where
         Self: 'm,
     {
+        // 从ClientExchange阶段解出payload，是client的public key
         let client_kx = require_handshake_msg!(
             m,
             HandshakeType::ClientKeyExchange,
