@@ -464,6 +464,7 @@ impl ExpectClientHello {
             client_hello.random,
             Random::new(self.config.provider.secure_random)?,
         );
+        // 准备server hello
         match suite {
             SupportedCipherSuite::Tls13(suite) => tls13::CompleteClientHelloHandling {
                 config: self.config,
